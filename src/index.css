@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #def9d4;
+  --color-brand-accent: #34C759;
+}

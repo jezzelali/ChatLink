@@ -1,0 +1,167 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 1. User Profile Rules
+    match /users/{userId} {
+      function isValidUserProfile(data) {
+        return data.username is string && 
+               data.username.size() >= 1 && 
+               data.username.size() <= 100 &&
+               data.updatedAt is timestamp;
+      }
+
+      // Allow any signed in user to see other users for discovery
+      allow get, list: if isSignedIn();
+
+      allow create: if isOwner(userId) && 
+                      isValidId(userId) &&
+                      isValidUserProfile(incoming()) &&
+                      incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) && 
+                      isValidUserProfile(incoming()) &&
+                      incoming().updatedAt == request.time &&
+                      // Action: Save Changes
+                      incoming().diff(existing()).affectedKeys().hasOnly(['username', 'fullName', 'photoURL', 'statusMessage', 'emailNotifications', 'pushNotifications', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // 2. Chat Rules
+    match /chats/{chatId} {
+      function isChatParticipant(chatId) {
+        return isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
+      }
+
+      function isParticipant() {
+        return isSignedIn() && (request.auth.uid in resource.data.participants);
+      }
+      
+      function isValidChat(data) {
+        return data.participants is list && 
+               data.participants.size() >= 2 &&
+               request.auth.uid in data.participants;
+      }
+
+      allow get, list: if isParticipant();
+      
+      allow create: if isSignedIn() && 
+                    isValidId(chatId) &&
+                    isValidChat(incoming());
+                    
+      allow update: if isParticipant() && (
+        // Action: Typing status update
+        (incoming().diff(existing()).affectedKeys().hasOnly(['typing'])) ||
+        
+        // Action: New message preview synchronization
+        (incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt']) && 
+         incoming().lastMessageAt == request.time) ||
+        
+        // Action: Group-specific updates (Modification or Adding People)
+        (existing().get('isGroup', false) == true && 
+         incoming().diff(existing()).affectedKeys().hasAny(['name', 'photoURL', 'participants', 'joinedAt']) &&
+         incoming().participants.hasAll(existing().participants))
+      );
+
+      allow delete: if isParticipant();
+
+      match /messages/{messageId} {
+        function isValidMessage(data) {
+          return data.senderId == request.auth.uid &&
+                 data.text is string &&
+                 data.text.size() <= 2000 &&
+                 data.createdAt == request.time;
+        }
+
+        // Helper to get join time for current user
+        function getJoinTime() {
+          return get(/databases/$(database)/documents/chats/$(chatId)).data.get(['joinedAt', request.auth.uid], null);
+        }
+
+        allow read, list: if isChatParticipant(chatId) && 
+                          (getJoinTime() == null || resource.data.createdAt >= getJoinTime());
+        
+        allow create: if isChatParticipant(chatId) &&
+                      isValidId(messageId) &&
+                      isValidMessage(incoming());
+
+        allow update: if isChatParticipant(chatId) && 
+                      existing().senderId == request.auth.uid &&
+                      incoming().diff(existing()).affectedKeys().hasAny(['text', 'isEdited', 'updatedAt']) &&
+                      incoming().text is string &&
+                      incoming().text.size() <= 2000;
+
+        allow delete: if isChatParticipant(chatId) && 
+                      existing().senderId == request.auth.uid;
+      }
+    }
+
+    // 3. Call Rules
+    match /calls/{callId} {
+      function isCallParty() {
+        return isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId);
+      }
+
+      function isValidCall(data) {
+        return data.callerId == request.auth.uid &&
+               isValidId(data.receiverId) &&
+               data.status == 'pending' &&
+               data.createdAt == request.time;
+      }
+
+      allow get, list, watch: if isCallParty();
+
+      allow create: if isSignedIn() && isValidId(callId) && isValidCall(incoming());
+
+      allow update: if isCallParty() && (
+        // Action: Accept call
+        (request.auth.uid == existing().receiverId && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['answer', 'status']) &&
+         incoming().status == 'active') ||
+        
+        // Action: End or reject call
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+         (incoming().status == 'ended' || incoming().status == 'rejected'))
+      );
+
+      allow delete: if isCallParty();
+
+      match /callerCandidates/{candidateId} {
+        allow read, list: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId);
+        allow create: if isSignedIn() && request.auth.uid == incoming().callerId;
+      }
+
+      match /receiverCandidates/{candidateId} {
+        allow read, list: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId);
+        allow create: if isSignedIn() && request.auth.uid == incoming().receiverId;
+      }
+    }
+  }
+}

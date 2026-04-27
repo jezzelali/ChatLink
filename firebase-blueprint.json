@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Public profile settings for a user.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The user's full name from registration"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The user's profile picture URL or base64 string"
+        },
+        "statusMessage": {
+          "type": "string",
+          "description": "A personal message or status"
+        },
+        "emailNotifications": {
+          "type": "boolean",
+          "description": "Whether email notifications are enabled"
+        },
+        "pushNotifications": {
+          "type": "boolean",
+          "description": "Whether push notifications are enabled"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["username"]
+    },
+    "ChatConversation": {
+      "title": "Chat Conversation",
+      "description": "Represents a chat room between users.",
+      "type": "object",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "description": "Array of user UIDs involved in the chat"
+        },
+        "isGroup": {
+          "type": "boolean",
+          "description": "Whether this is a group chat"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the group chat"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile picture for the group"
+        },
+        "typing": {
+          "type": "object",
+          "description": "Map of user UIDs to their typing status"
+        },
+        "lastMessage": {
+          "type": "string",
+          "description": "The text of the last message sent"
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last message"
+        },
+        "joinedAt": {
+          "type": "object",
+          "description": "Map of user UIDs to the timestamp they joined the chat"
+        }
+      },
+      "required": ["participants"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A single message within a chat.",
+      "type": "object",
+      "properties": {
+        "senderId": {
+          "type": "string",
+          "description": "UID of the sender"
+        },
+        "text": {
+          "type": "string",
+          "description": "Content of the message"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was sent"
+        }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    },
+    "Call": {
+      "title": "Call",
+      "description": "Signal data for a WebRTC call session.",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": { "type": "string", "description": "pending, active, ended, rejected" },
+        "offer": { "type": "object", "description": "WebRTC SDP Offer" },
+        "answer": { "type": "object", "description": "WebRTC SDP Answer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["callerId", "receiverId", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores individual user profile data."
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatConversation",
+      "description": "Conversation metadata."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Individual messages in a chat."
+    },
+    "/calls/{callId}": {
+      "schema": "Call",
+      "description": "Real-time call signaling sessions."
+    }
+  }
+}

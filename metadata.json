@@ -1,0 +1,8 @@
+{
+  "name": "ChatLink",
+  "description": "A real-time messaging and collaborative system featuring group chats, typing indicators, and account management.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
