@@ -1486,7 +1486,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
         
         {/* Message Thread */}
         <div 
-          className={`flex-1 overflow-y-auto p-4 space-y-4 transition-colors duration-500 ${THEMES[activeTheme].bg}`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 transition-colors duration-500 ${THEMES[activeTheme].bg}`}
           style={{ 
             backgroundImage: `radial-gradient(${activeTheme === 'midnight' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'} 1px, transparent 1px)`,
             backgroundSize: '20px 20px'
@@ -1497,14 +1497,14 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
             const isEditing = editingMessageId === msg.id;
 
             return (
-              <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-in fade-in duration-300 group max-w-full`}>
+              <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-in fade-in duration-300 group w-full`}>
                 {selectedChat.isGroup && !isMe && (i === 0 || messages[i-1].senderId !== msg.senderId) && (
                   <span className="text-[10px] font-bold text-slate-400 mb-1 ml-2 uppercase tracking-widest">{msg.senderName}</span>
                 )}
                 
-                <div className={`relative max-w-[85%] flex items-start gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`relative max-w-[90%] flex items-start gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                   {isMe && !isEditing && (
-                    <div className="flex items-center gap-1 self-center">
+                    <div className="flex items-center gap-1 shrink-0">
                           {confirmingDeleteMessageId === msg.id ? (
                             <div className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-200 bg-white border border-slate-100 rounded-xl p-1 shadow-xl ring-1 ring-slate-50 z-10">
                               <button 
@@ -1527,7 +1527,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
                                   <button 
                                     key={emoji}
                                     onClick={() => reactToMessage(msg.id, emoji)}
-                                    className="p-1 hover:scale-125 transition-transform text-xs grayscale-[0.5] hover:grayscale-0"
+                                    className="p-1 hover:scale-125 transition-transform text-xs"
                                   >
                                     {emoji}
                                   </button>
@@ -1535,14 +1535,14 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
                               </div>
                               <button 
                                 onClick={() => { setEditingMessageId(msg.id); setEditMessageText(msg.text); }}
-                                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"
+                                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
                                 title="Edit"
                               >
                                 <Edit2 className="w-3 h-3" />
                               </button>
                               <button 
                                 onClick={() => setConfirmingDeleteMessageId(msg.id)}
-                                className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500"
+                                className="p-1 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -1553,7 +1553,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
                       )}
 
                       {!isMe && (
-                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 self-center ml-2">
+                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-1">
                             <div className="flex bg-slate-100/80 backdrop-blur-sm rounded-full px-1 border border-slate-200">
                               {COMMON_EMOJIS.map(emoji => (
                                 <button 
@@ -1568,7 +1568,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
                          </div>
                       )}
 
-                      <div className={`rounded-2xl overflow-hidden leading-tight ${isMe ? `${THEMES[activeTheme].bubble} text-white rounded-tr-md` : 'bg-[#E9E9EB] text-black rounded-tl-md'} px-4 py-2.5 shadow-sm`}>
+                      <div className={`rounded-2xl overflow-hidden leading-tight ${isMe ? `${THEMES[activeTheme].bubble} text-white rounded-tr-md` : 'bg-[#E9E9EB] text-black rounded-tl-md'} px-4 py-2.5 shadow-sm max-w-full break-words`}>
                         {isEditing ? (
                           <div className="space-y-2 min-w-[200px] p-2">
                             <textarea 
@@ -1585,7 +1585,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
                           </div>
                         ) : (
                           <>
-                            {msg.text}
+                            <p className="whitespace-pre-wrap">{msg.text}</p>
                             {msg.isEdited && <span className="block text-[8px] opacity-60 mt-1 italic">edited</span>}
                           </>
                         )}
@@ -1594,7 +1594,7 @@ export default function Messenger({ currentUser, onChatStatusChange }: Messenger
 
                     {/* Reactions Display */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                      <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end pr-1' : 'justify-start pl-1'}`}>
                         {Object.entries(msg.reactions).map(([emoji, uids]) => (
                           <button 
                             key={emoji}

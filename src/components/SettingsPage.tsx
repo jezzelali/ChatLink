@@ -501,7 +501,7 @@ export default function SettingsPage() {
 
         {/* Content Area */}
         <section className={`flex-1 overflow-y-auto bg-brand-bg transition-all ${activeTab === 'messages' ? 'p-0' : 'p-6 md:p-10'} ${!isMessengerActive ? 'pb-24 md:pb-0' : ''}`}>
-          <div className={`mx-auto transition-all ${activeTab === 'messages' ? 'max-w-none md:max-w-6xl h-full' : 'max-w-2xl space-y-8'}`}>
+          <div className={`mx-auto transition-all ${activeTab === 'messages' ? 'w-full max-w-none h-full' : 'max-w-2xl space-y-8'}`}>
             <AnimatePresence mode="wait">
               {message && (
                 <div className="px-6 md:px-0 mb-4">
