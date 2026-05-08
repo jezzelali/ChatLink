@@ -81,7 +81,7 @@ service cloud.firestore {
         (incoming().diff(existing()).affectedKeys().hasOnly(['typing'])) ||
         
         // Action: New message preview synchronization
-        (incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt']) && 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'lastMessageSenderId', 'lastMessageSenderName']) && 
          incoming().lastMessageAt == request.time) ||
         
         // Action: Group-specific updates (Modification or Adding People)
@@ -97,7 +97,8 @@ service cloud.firestore {
           return data.senderId == request.auth.uid &&
                  data.text is string &&
                  data.text.size() <= 2000 &&
-                 data.createdAt == request.time;
+                 data.createdAt == request.time &&
+                 (data.get('senderName', null) == null || data.senderName is string);
         }
 
         // Helper to get join time for current user
@@ -112,11 +113,19 @@ service cloud.firestore {
                       isValidId(messageId) &&
                       isValidMessage(incoming());
 
-        allow update: if isChatParticipant(chatId) && 
-                      existing().senderId == request.auth.uid &&
-                      incoming().diff(existing()).affectedKeys().hasAny(['text', 'isEdited', 'updatedAt']) &&
-                      incoming().text is string &&
-                      incoming().text.size() <= 2000;
+        allow update: if isChatParticipant(chatId) && (
+          // Action: Edit Message (Sender only)
+          (existing().senderId == request.auth.uid && 
+           incoming().diff(existing()).affectedKeys().hasOnly(['text', 'isEdited', 'updatedAt']) &&
+           incoming().text is string &&
+           incoming().text.size() <= 2000 &&
+           incoming().isEdited == true &&
+           incoming().updatedAt == request.time) ||
+          
+          // Action: React to Message (Any participant)
+          (incoming().diff(existing()).affectedKeys().hasOnly(['reactions']) &&
+           incoming().reactions is map)
+        );
 
         allow delete: if isChatParticipant(chatId) && 
                       existing().senderId == request.auth.uid;

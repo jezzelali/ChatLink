@@ -71,6 +71,14 @@
           "format": "date-time",
           "description": "Timestamp of the last message"
         },
+        "lastMessageSenderId": {
+          "type": "string",
+          "description": "UID of the last message sender"
+        },
+        "lastMessageSenderName": {
+          "type": "string",
+          "description": "DisplayName of the last message sender"
+        },
         "joinedAt": {
           "type": "object",
           "description": "Map of user UIDs to the timestamp they joined the chat"
@@ -87,6 +95,10 @@
           "type": "string",
           "description": "UID of the sender"
         },
+        "senderName": {
+          "type": "string",
+          "description": "Display name of the sender at the time of sending"
+        },
         "text": {
           "type": "string",
           "description": "Content of the message"
@@ -95,6 +107,19 @@
           "type": "string",
           "format": "date-time",
           "description": "When the message was sent"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was last edited"
+        },
+        "isEdited": {
+          "type": "boolean",
+          "description": "Whether the message has been edited"
+        },
+        "reactions": {
+          "type": "object",
+          "description": "Map of emojis to arrays of user UIDs who reacted"
         }
       },
       "required": ["senderId", "text", "createdAt"]
